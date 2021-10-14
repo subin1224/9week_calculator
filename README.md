@@ -4,6 +4,28 @@
 ---
 <br>
 
+## 폴더 구조
+```
+├── src
+│   ├── components
+│   │   ├── Calculator.vue
+│   │   ├── CalculatorButton.vue
+│   │   ├── CalculatorDisplay.vue
+│   │   ├── CalculatorHistory.vue
+│   │   └── CalculatorKeypad.vue
+│   │
+│   ├── compositions
+│   │   └── useCalculate.js
+│   │
+│   └── store
+│       └── index.js
+│ 
+├── App.vue
+└── main.js
+```
+
+
+
 
 ## Button
 ### Props
