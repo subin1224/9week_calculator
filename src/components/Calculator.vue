@@ -1,6 +1,10 @@
 <template>
   <div class="header">
-    <button class="historyBtn" @click="showHistory"><img src="../assets/history.png" style="width:25px"></button>
+    <button class="historyBtn"
+      @click="showHistory"
+    >
+      <img src="../assets/history.png" style="width:25px">
+    </button>
   </div>
 
   <CalculatorDisplay class="display"
@@ -14,10 +18,14 @@
     @add-operator="showExpression"
     @show-result="showResultValue"
     @clear-entry="clearEntry"
+    @erase-digit="eraseDigit"
+    @all-clear-expression="allClearExpression"
+    @negate-digit="negateDigit"
   />
   <CalculatorHistory class="keypad"
     v-show="isOpen"
     :calc-history="currentValue"
+    @call-express="callExpressByHistory"
     @contextmenu.prevent
   />
 </template>
@@ -42,7 +50,8 @@ export default {
   setup() {
     const store = useStore();
     const {
-      findResult
+      findResult,
+      negateInputValue
     } = useCalculate();
 
     const isOpen = ref(false);
@@ -65,7 +74,7 @@ export default {
       }
       if(computeExpression.currentValue.length === MAX_LENGTH) return;
       computeExpression.currentValue += digit;
-    }
+    };
 
     const expression = ref(''); // number (+ / - * )
     const showExpression = (operatorType) => {
@@ -80,7 +89,7 @@ export default {
 
       expression.value = computeExpression.firstValue + ' ' + operatorType;
       changeBool = true;
-    }
+    };
 
     const showResultValue = (equal) => {
       computeExpression.secondValue = computeExpression.currentValue;
@@ -91,12 +100,41 @@ export default {
       changeBool = true;
 
       store.commit('separateExpression', expression.value + computeExpression.currentValue);
-    }
+    };
 
     const clearEntry = () => {
       computeExpression.currentValue = '0';
       changeBool = true;
-    }
+    };
+
+    const eraseDigit = () => {
+      computeExpression.currentValue =
+        computeExpression.currentValue.slice(0, computeExpression.currentValue.length -1);
+    };
+
+    const allClearExpression = () => {
+      computeExpression.currentValue = '0';
+      computeExpression.firstValue = '';
+      computeExpression.secondValue = '';
+      computeExpression.operator = '';
+      expression.value = '';
+      changeBool = true;
+    };
+
+    const callExpressByHistory = (idx) => {
+      const historyIndex = store.getters.getHistories.length - idx - 1;
+      const historyOfIndex = store.getters.getHistories[historyIndex];
+
+      expression.value = historyOfIndex.expression + ' = ';
+      computeExpression.currentValue = historyOfIndex.resultValue;
+      changeBool = true;
+      isOpen.value = !isOpen.value;
+    };
+
+    const negateDigit = () => {
+      if(computeExpression.currentValue === '0') return;
+      computeExpression.currentValue = negateInputValue(computeExpression.currentValue);
+    };
 
     return {
       isOpen,
@@ -111,6 +149,11 @@ export default {
       showResultValue,
 
       clearEntry,
+      eraseDigit,
+      allClearExpression,
+
+      callExpressByHistory,
+      negateDigit,
     };
   }
 }

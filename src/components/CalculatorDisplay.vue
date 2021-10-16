@@ -14,7 +14,7 @@
 
 <script>
 import { useCalculate } from "../composable/useCalculate";
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 
 export default {
   name: "CalculatorDisplay",

@@ -2,22 +2,16 @@
 <div class="history">
 
   <div class="previous"
+       v-for="(history, idx) in histories.slice().reverse()"
+       :key="history.historyIndex"
        @mousedown.right = "mouseRight(idx)"
        @mouseover = "mouseoverEraseActive"
        @mouseleave = "mouseleaveEraseActive"
-       v-for="(history, idx) in histories.slice().reverse()"
-       :key="history.historyIndex"
+       @click = "callExpression(idx)"
   >
     <div class="operation">
       {{ history.expression }} =
     </div>
-
-    <CalculatorButton class="eraseBtn"
-      type="trash"
-      v-show="eraseActive"
-    >
-      <img src="../assets/trash.png" style="width:20px">
-    </CalculatorButton>
 
     <div class="currentValue">
       {{ history.resultValue }}
@@ -46,16 +40,16 @@ import { useStore } from "vuex";
 
 export default {
   name: "CalculatorHistory",
-  components: {
-    CalculatorButton,
-  },
   props: {
     calcHistory: {
       type: String,
       default: '',
     }
   },
-  setup() {
+  emits: [
+    'call-express'
+  ],
+  setup(props, { emit }) {
     const store = useStore();
     const histories = computed(() => store.getters.getHistories );
     let eraseActive = ref(false);
@@ -76,6 +70,10 @@ export default {
       store.commit('clearHistoryByIndex', histories.value.length - idx - 1);
     };
 
+    const callExpression = (idx) => {
+      emit('call-express', idx);
+    };
+
     return {
       eraseActive,
       mouseoverEraseActive,
@@ -84,6 +82,7 @@ export default {
       histories,
       clearHistories,
       mouseRight,
+      callExpression,
     }
   }
 }
