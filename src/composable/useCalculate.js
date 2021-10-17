@@ -1,4 +1,4 @@
-import { MAX_LENGTH } from "../shared/constants";
+import { MAX_LENGTH, ERROR_CODE } from "../shared/constants";
 
 export function useCalculate() {
     //안전한 최대 정수값 (2^53 -1)
@@ -6,8 +6,7 @@ export function useCalculate() {
 
     //세자리수 컴마
     function addComma(number) {
-        console.log(number);
-        const parts = number.split(".");
+        const parts = number.toString().split(".");
         return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (parts[1] ? "." + parts[1] : "");
     }
 
@@ -22,12 +21,10 @@ export function useCalculate() {
     }
     */
 
-
     //지수 표기 => 문자열 반환
     function inputValueToExpotential(inputValue) {
-        const value = Number(inputValue);
         if(inputValue.length > MAX_LENGTH) {
-            return value.toExponential();
+            return Number(inputValue).toExponential();
         }else {
             return inputValue;
         }
@@ -55,11 +52,9 @@ export function useCalculate() {
                 case '/':
                     if (secondValue === 0) {
                         if (firstValue === 0) {
-                            // currentValue.value = '정의되지 않은 결과입니다.';
-                            return;
+                            return '정의되지 않은 결과입니다.';
                         }
-                        // currentValue.value = '0으로 나눌 수 없습니다.';
-                        return;
+                        return '0으로 나눌 수 없습니다.';
                     }
                     result = (firstValue / secondValue);
                     break;
@@ -80,7 +75,7 @@ export function useCalculate() {
             return inputValueToExpotential(result);
 
         } catch (e) {
-            return '오버플로';
+            return '에러 발생';
         }
     }
 

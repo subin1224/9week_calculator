@@ -35,10 +35,10 @@ import CalculatorDisplay from "./CalculatorDisplay.vue";
 import CalculatorKeypad from "./CalculatorKeypad.vue";
 import CalculatorHistory from "./CalculatorHistory.vue";
 
-import { ref, reactive, toRefs } from "vue";
+import {ref, reactive, toRefs, onMounted} from "vue";
 import { useStore } from "vuex";
 import { useCalculate } from "../composable/useCalculate";
-import { MAX_LENGTH } from "../shared/constants";
+import { MAX_LENGTH, ERROR_CODE } from "../shared/constants";
 
 export default {
   name: "Calculator",
@@ -55,29 +55,51 @@ export default {
     } = useCalculate();
 
     const isOpen = ref(false);
-    const showHistory = () => {
-      isOpen.value = !isOpen.value;
-    }
-
-    let changeBool = true;
     const computeExpression = reactive({
       currentValue: '0',
       firstValue: '',
       operator: '',
       secondValue: ''
     });
+    const expression = ref(''); // number (+ / - * )
+
+    let changeValueBool = true;
+    let changeOperatorBool = false; // = 를 눌러 결과값 도출 후 숫자 입력 시 expression 초기화
+    let equalBool = false;  // = 을 연속으로 누를 시 return => 추후 수정 : currVal이 firstVal로 계산
+
+    const showHistory = () => {
+      isOpen.value = !isOpen.value;
+    }
 
     const showEnteredNum = (digit) => {
-      if(changeBool) {
+      if (changeValueBool) {
         computeExpression.currentValue = '';
-        changeBool = false;
+        changeValueBool = false;
       }
-      if(computeExpression.currentValue.length === MAX_LENGTH) return;
+      //길이 제한
+      if (computeExpression.currentValue.length === MAX_LENGTH) return;
+
+      // 소수점은 하나만 표기
+      if (computeExpression.currentValue.indexOf('.') !== -1 && digit === '.') return;
+
+      // 0.xx 꼴
+      if (computeExpression.currentValue === '' && digit === '.') {
+        computeExpression.currentValue = '0';
+      }
+
       computeExpression.currentValue += digit;
+
+      if (changeOperatorBool) {
+        expression.value = '';
+        changeOperatorBool = false;
+      }
+
+      equalBool = true;
     };
 
-    const expression = ref(''); // number (+ / - * )
     const showExpression = (operatorType) => {
+      if (ERROR_CODE.includes(computeExpression.currentValue)) return;
+
       computeExpression.operator = operatorType;
 
       /*
@@ -88,28 +110,38 @@ export default {
       computeExpression.firstValue = computeExpression.currentValue;
 
       expression.value = computeExpression.firstValue + ' ' + operatorType;
-      changeBool = true;
+      changeValueBool = true;
     };
 
     const showResultValue = (equal) => {
+      if(!equalBool) return;
       computeExpression.secondValue = computeExpression.currentValue;
       expression.value += ' ' + computeExpression.secondValue;
+
       computeExpression.currentValue = findResult(expression.value);
 
       expression.value += ' '+ equal ;
-      changeBool = true;
+      changeValueBool = true;
+      changeOperatorBool = true;
+      equalBool = false;
 
-      store.commit('separateExpression', expression.value + computeExpression.currentValue);
-    };
-
-    const clearEntry = () => {
-      computeExpression.currentValue = '0';
-      changeBool = true;
+      if (!ERROR_CODE.includes(computeExpression.currentValue)) {
+        store.commit('separateExpression', expression.value + computeExpression.currentValue);
+      }
     };
 
     const eraseDigit = () => {
       computeExpression.currentValue =
         computeExpression.currentValue.slice(0, computeExpression.currentValue.length -1);
+    };
+
+    const clearEntry = () => {
+      if (ERROR_CODE.includes(computeExpression.currentValue)) {
+        allClearExpression();
+        return;
+      }
+      computeExpression.currentValue = '0';
+      changeValueBool = true;
     };
 
     const allClearExpression = () => {
@@ -118,7 +150,7 @@ export default {
       computeExpression.secondValue = '';
       computeExpression.operator = '';
       expression.value = '';
-      changeBool = true;
+      changeValueBool = true;
     };
 
     const callExpressByHistory = (idx) => {
@@ -127,7 +159,7 @@ export default {
 
       expression.value = historyOfIndex.expression + ' = ';
       computeExpression.currentValue = historyOfIndex.resultValue;
-      changeBool = true;
+      changeValueBool = true;
       isOpen.value = !isOpen.value;
     };
 
