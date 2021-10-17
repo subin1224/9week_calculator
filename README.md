@@ -15,7 +15,8 @@
 │   │   └── CalculatorKeypad.vue
 │   │
 │   ├── compositions
-│   │   └── useCalculate.js
+│   │   ├── useCalculate.js
+│   │   └── useKeyboard.js
 │   │
 │   └── store
 │       └── index.js
