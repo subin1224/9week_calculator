@@ -9,15 +9,14 @@ export default createStore({
     getHistories(state){
       return state.histories;
     }
-
   },
   mutations: {
     separateExpression(state, payload) {
       //state 배열에서 하나를 가지고 = 의 위치를 찾아서 분리 -> = 까지의 문자열
       state.histories.push({
-        'historyIndex' : state.historiesIndex,
-        'expression' : payload.split('=')[0],
-        'resultValue' : payload.split('=')[1]
+        historyIndex: state.historiesIndex,
+        expression: payload.expression,
+        resultValue: payload.resultValue
       });
 
       state.historiesIndex++;

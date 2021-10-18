@@ -38,7 +38,7 @@ import CalculatorHistory from "./CalculatorHistory.vue";
 import { ref, reactive, toRefs } from "vue";
 import { useStore } from "vuex";
 import { useCalculate } from "../composable/useCalculate";
-import { MAX_LENGTH } from "../shared/constants";
+import { MAX_LENGTH, ERROR_CODE } from "../shared/constants";
 
 export default {
   name: "Calculator",
@@ -51,74 +51,106 @@ export default {
     const store = useStore();
     const {
       findResult,
-      negateInputValue
+      negateInputValue,
     } = useCalculate();
 
     const isOpen = ref(false);
-    const showHistory = () => {
-      isOpen.value = !isOpen.value;
-    }
-
-    let changeBool = true;
-    const computeExpression = reactive({
+    const calculateExpression = reactive({
       currentValue: '0',
       firstValue: '',
       operator: '',
       secondValue: ''
     });
+    const expression = ref(''); // number (+ / - * )
+
+    let changeValueBool = true;
+    let equalBool = false;  // = 을 연속으로 누를 시 return => 추후 수정 : currVal이 firstVal로 계산
+
+    const showHistory = () => {
+      isOpen.value = !isOpen.value;
+    }
 
     const showEnteredNum = (digit) => {
-      if(changeBool) {
-        computeExpression.currentValue = '';
-        changeBool = false;
+      if (changeValueBool) {
+        calculateExpression.currentValue = '';
+        changeValueBool = false;
       }
-      if(computeExpression.currentValue.length === MAX_LENGTH) return;
-      computeExpression.currentValue += digit;
+      //길이 제한
+      if (calculateExpression.currentValue.length === MAX_LENGTH) return;
+
+      // 소수점은 하나만 표기
+      if (calculateExpression.currentValue.indexOf('.') !== -1 && digit === '.') return;
+
+      // 0.xx 꼴
+      if (calculateExpression.currentValue === '' && digit === '.') {
+        calculateExpression.currentValue = '0';
+      }
+
+      calculateExpression.currentValue += digit;
+      equalBool = true;
     };
 
-    const expression = ref(''); // number (+ / - * )
     const showExpression = (operatorType) => {
-      computeExpression.operator = operatorType;
+      if (ERROR_CODE.includes(calculateExpression.currentValue)) return;
 
-      /*
+      calculateExpression.operator = operatorType;
+
       if(operatorType === '*') operatorType = '×';
       else if(operatorType === '/' ) operatorType = '÷';
-      */
 
-      computeExpression.firstValue = computeExpression.currentValue;
-
-      expression.value = computeExpression.firstValue + ' ' + operatorType;
-      changeBool = true;
+      calculateExpression.firstValue = calculateExpression.currentValue;
+      expression.value = calculateExpression.firstValue + ' ' + operatorType;
+      changeValueBool = true;
     };
 
     const showResultValue = (equal) => {
-      computeExpression.secondValue = computeExpression.currentValue;
-      expression.value += ' ' + computeExpression.secondValue;
-      computeExpression.currentValue = findResult(expression.value);
+      if(!equalBool) return;
 
-      expression.value += ' '+ equal ;
-      changeBool = true;
+      calculateExpression.secondValue = calculateExpression.currentValue;
+      expression.value += ' ' + calculateExpression.secondValue;
 
-      store.commit('separateExpression', expression.value + computeExpression.currentValue);
-    };
+      calculateExpression.currentValue = findResult(expression.value);
 
-    const clearEntry = () => {
-      computeExpression.currentValue = '0';
-      changeBool = true;
+      changeValueBool = true;
+      equalBool = false;
+
+      if (!ERROR_CODE.includes(calculateExpression.currentValue)) {
+        store.commit('separateExpression',
+          {
+            expression: expression.value,
+            resultValue: calculateExpression.currentValue
+        });
+      }
+
+      expression.value += ' = ';
     };
 
     const eraseDigit = () => {
-      computeExpression.currentValue =
-        computeExpression.currentValue.slice(0, computeExpression.currentValue.length -1);
+      if (calculateExpression.currentValue.length === 1) {
+        calculateExpression.currentValue = '0';
+        changeValueBool = true;
+      } else if(calculateExpression.currentValue !== '0') {
+        calculateExpression.currentValue =
+          calculateExpression.currentValue.slice(0, calculateExpression.currentValue.length -1);
+      }
+    };
+
+    const clearEntry = () => {
+      if (ERROR_CODE.includes(calculateExpression.currentValue)) {
+        allClearExpression();
+        return;
+      }
+      calculateExpression.currentValue = '0';
+      changeValueBool = true;
     };
 
     const allClearExpression = () => {
-      computeExpression.currentValue = '0';
-      computeExpression.firstValue = '';
-      computeExpression.secondValue = '';
-      computeExpression.operator = '';
+      calculateExpression.currentValue = '0';
+      calculateExpression.firstValue = '';
+      calculateExpression.secondValue = '';
+      calculateExpression.operator = '';
       expression.value = '';
-      changeBool = true;
+      changeValueBool = true;
     };
 
     const callExpressByHistory = (idx) => {
@@ -126,14 +158,14 @@ export default {
       const historyOfIndex = store.getters.getHistories[historyIndex];
 
       expression.value = historyOfIndex.expression + ' = ';
-      computeExpression.currentValue = historyOfIndex.resultValue;
-      changeBool = true;
+      calculateExpression.currentValue = historyOfIndex.resultValue;
+      changeValueBool = true;
       isOpen.value = !isOpen.value;
     };
 
     const negateDigit = () => {
-      if(computeExpression.currentValue === '0') return;
-      computeExpression.currentValue = negateInputValue(computeExpression.currentValue);
+      if(calculateExpression.currentValue === '0') return;
+      calculateExpression.currentValue = negateInputValue(calculateExpression.currentValue);
     };
 
     return {
@@ -142,18 +174,17 @@ export default {
 
       expression,
       showExpression,
-
-      ...toRefs(computeExpression),
       showEnteredNum,
-
       showResultValue,
+      negateDigit,
 
       clearEntry,
       eraseDigit,
       allClearExpression,
 
       callExpressByHistory,
-      negateDigit,
+
+      ...toRefs(calculateExpression),
     };
   }
 }

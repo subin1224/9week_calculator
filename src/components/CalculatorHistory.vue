@@ -2,7 +2,7 @@
 <div class="history">
 
   <div class="previous"
-       v-for="(history, idx) in histories.slice().reverse()"
+       v-for="(history, idx) in histories"
        :key="history.historyIndex"
        @mousedown.right = "mouseRight(idx)"
        @mouseover = "mouseoverEraseActive"
@@ -33,25 +33,17 @@
 </template>
 
 <script>
-import CalculatorButton from "./CalculatorButton.vue";
-
 import { computed, ref } from "vue";
 import { useStore } from "vuex";
 
 export default {
   name: "CalculatorHistory",
-  props: {
-    calcHistory: {
-      type: String,
-      default: '',
-    }
-  },
   emits: [
     'call-express'
   ],
   setup(props, { emit }) {
     const store = useStore();
-    const histories = computed(() => store.getters.getHistories );
+    const histories = computed(() => store.getters.getHistories.slice().reverse() );
     let eraseActive = ref(false);
 
     const mouseoverEraseActive = () => {
