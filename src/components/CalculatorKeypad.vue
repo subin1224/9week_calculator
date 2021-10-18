@@ -148,7 +148,7 @@ export default {
 
         if (DIGITS.includes(key)) addDigit(key);
         if (OPERATORS.includes(key)) addOperator(key);
-        if (RESULT_KEYS.includes(key)) calculateResult(key);
+        if (RESULT_KEYS.includes(key)) calculateResult('=');
         if (ERASE_KEYS.includes(key)) eraseDigit();
         if (CLEAR_KEYS.includes(key)) allClearExpression();
       });
