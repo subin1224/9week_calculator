@@ -14,7 +14,7 @@
 │   │   ├── CalculatorHistory.vue
 │   │   └── CalculatorKeypad.vue
 │   │
-│   ├── compositions
+│   ├── composable
 │   │   ├── useCalculate.js
 │   │   └── useKeyboard.js
 │   │
